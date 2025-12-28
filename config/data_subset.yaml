@@ -1,0 +1,14 @@
+# YOLO Face Detection Dataset Configuration (SUBSET for Testing)
+# Small subset for quick verification
+
+# Dataset paths
+path: /Users/saifqal/Project/datasets/wider_YOLO/widerface_yolo_subset
+train: train/images
+val: val/images
+
+# Number of classes
+nc: 1
+
+# Class names
+names:
+  0: face

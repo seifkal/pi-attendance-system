@@ -1,0 +1,32 @@
+# Smart Class Camera - Raspberry Pi 5 Requirements
+# Optimized for ARM architecture
+
+# Core Computer Vision
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Face Recognition (ArcFace)
+insightface>=0.7.3
+onnxruntime>=1.16.0  # ARM-optimized ONNX runtime
+
+# Attention Monitoring (Head Pose)
+mediapipe>=0.10.0
+
+# Object Detection (YOLOv8 - already installed, but included for completeness)
+ultralytics>=8.0.0
+
+# Database & Data Management
+pandas>=2.0.0
+
+# Visualization & Dashboard
+flask>=3.0.0
+matplotlib>=3.7.0
+
+# Utilities
+PyYAML>=6.0
+tqdm>=4.65.0
+python-dateutil>=2.8.0
+
+# Optional: For Raspberry Pi Camera Module
+picamera2>=0.3.0  # Pi Camera Module 2/3 support

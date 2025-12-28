@@ -1,0 +1,14 @@
+# YOLO Face Detection Dataset Configuration - RunPod Version
+# WIDER Face Dataset - for Smart Class Camera Project
+
+# Dataset paths (RunPod paths)
+path: /workspace/datasets/widerface_yolo_fixed
+train: train/images
+val: val/images
+
+# Number of classes
+nc: 1
+
+# Class names
+names:
+  0: face

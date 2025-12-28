@@ -1,0 +1,14 @@
+# YOLO Face Detection Dataset Configuration
+# WIDER Face Dataset - for Smart Class Camera Project
+
+# Dataset paths (absolute paths)
+path: /Users/saifqal/Project/datasets/wider_YOLO/widerface_yolo_fixed
+train: train/images
+val: val/images
+
+# Number of classes
+nc: 1
+
+# Class names
+names:
+  0: face
