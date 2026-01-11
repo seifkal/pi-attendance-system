@@ -293,6 +293,32 @@ class SessionManager:
         timer.daemon = True
         timer.start()
     
+    
+    def generate_report(self) -> Dict:
+        """
+        Generate a dictionary report of the session data.
+        Compatible with the format expected by pi_attendance.py for server upload.
+        """
+        if not self.report:
+            return {}
+            
+        # Get data from SessionReport
+        records = []
+        for student in self.report.students.values():
+            records.append({
+                'name': student.name,
+                'present': student.status in ('present', 'late'),
+                'first_seen': student.first_seen.strftime('%H:%M:%S') if student.first_seen else "N/A",
+                'check_count': student.checks_present,
+                'attention_logs': student.attention_scores
+            })
+            
+        return {
+            'session_name': self.report.session_name,
+            'duration_minutes': self.report.duration_minutes,
+            'attendance_records': records,
+        }
+
     def _export_report(self) -> str:
         """Export the session report to CSV."""
         output_dir = Path(self.config.output_dir)
