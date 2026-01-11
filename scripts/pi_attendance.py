@@ -27,6 +27,8 @@ from face_recognition import FaceRecognizer
 from student_database import StudentDatabase
 from activity_monitor import ActivityMonitor, get_attention_color
 from session_manager import SessionManager, SessionConfig
+from detect_and_crop import crop_face, load_model as load_yolo
+from ultralytics import YOLO
 
 # Try to import picamera2 for Pi Camera Module
 try:
@@ -55,6 +57,11 @@ class AttendanceSystem:
         # Load models
         print("Loading ArcFace model (buffalo_s - optimized for Pi)...")
         self.recognizer = FaceRecognizer(model_name='buffalo_s', device='cpu')
+
+        # Load YOLO model
+        yolo_path = Path(__file__).parent.parent / 'models' / 'best.pt'
+        print(f"Loading YOLO model from {yolo_path}...")
+        self.yolo = YOLO(str(yolo_path))
         
         print("Loading database...")
         self.database = StudentDatabase(database_path)
@@ -126,70 +133,79 @@ class AttendanceSystem:
             return self.camera.read()
     
     def process_frame(self, frame, mark_attendance=True):
-        """Process a single frame for face recognition"""
+        """Process a single frame for face recognition using YOLOv8 + ArcFace"""
         display = frame.copy()
         current_time = datetime.now()
         recognitions = []
         
-        try:
-            # Detect and recognize faces
-            embedding, det_info = self.recognizer.extract_embedding(frame, return_detection=True)
+        # 1. Detect faces using YOLOv8
+        results = self.yolo.predict(frame, conf=0.5, verbose=False)
+        
+        if len(results) == 0 or len(results[0].boxes) == 0:
+            return display, recognitions
             
-            # Find match
-            match = self.database.find_match(embedding, threshold=self.recognition_threshold)
+        # 2. Process each detected face
+        for box in results[0].boxes:
+            xyxy = box.xyxy[0].cpu().numpy()
+            x1, y1, x2, y2 = map(int, xyxy)
             
-            # Draw bounding box
-            bbox = det_info['bbox'].astype(int)
-            x1, y1, x2, y2 = bbox
+            # Crop face
+            face_crop = crop_face(frame, xyxy, padding=0.2)
             
-            # Get landmarks for attention tracking
-            landmarks = det_info.get('landmark')
-            
-            if match:
-                student_id, name, confidence = match
+            try:
+                # 3. Get embedding and landmarks from crop
+                embedding, landmarks = self.recognizer.extract_embedding_from_crop(
+                    face_crop, return_landmarks=True
+                )
                 
-                # Green box for recognized
-                cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # 4. Find match
+                match = self.database.find_match(embedding, threshold=self.recognition_threshold)
                 
-                # Label
-                label = f"{name} ({confidence:.2f})"
-                label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                cv2.rectangle(display, (x1, y1 - label_size[1] - 10),
-                            (x1 + label_size[0], y1), (0, 255, 0), -1)
-                cv2.putText(display, label, (x1, y1 - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-                
-                recognitions.append({
-                    'student_id': student_id,
-                    'name': name,
-                    'confidence': confidence,
-                    'bbox': [x1, y1, x2, y2],
-                    'landmarks': landmarks
-                })
-                
-                # Mark attendance (with cooldown)
-                if mark_attendance:
-                    if student_id in self.recent_recognitions:
-                        elapsed = (current_time - self.recent_recognitions[student_id]).total_seconds()
-                        if elapsed >= self.attendance_cooldown:
+                if match:
+                    student_id, name, confidence = match
+                    
+                    # Green box for recognized
+                    cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    
+                    # Label
+                    label = f"{name} ({confidence:.2f})"
+                    label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                    cv2.rectangle(display, (x1, y1 - label_size[1] - 10),
+                                (x1 + label_size[0], y1), (0, 255, 0), -1)
+                    cv2.putText(display, label, (x1, y1 - 5),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                    
+                    recognitions.append({
+                        'student_id': student_id,
+                        'name': name,
+                        'confidence': confidence,
+                        'bbox': [x1, y1, x2, y2],
+                        'landmarks': landmarks
+                    })
+                    
+                    # Mark attendance (with cooldown)
+                    if mark_attendance:
+                        if student_id in self.recent_recognitions:
+                            elapsed = (current_time - self.recent_recognitions[student_id]).total_seconds()
+                            if elapsed >= self.attendance_cooldown:
+                                self.database.mark_attendance(student_id, confidence=confidence)
+                                self.recent_recognitions[student_id] = current_time
+                                print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
+                        else:
                             self.database.mark_attendance(student_id, confidence=confidence)
                             self.recent_recognitions[student_id] = current_time
                             print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
-                    else:
-                        self.database.mark_attendance(student_id, confidence=confidence)
-                        self.recent_recognitions[student_id] = current_time
-                        print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
-                
-                self.recognition_count += 1
-            else:
-                # Red box for unknown
-                cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                cv2.putText(display, "Unknown", (x1, y1 - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-        
-        except ValueError:
-            # No face detected
-            pass
+                    
+                    self.recognition_count += 1
+                else:
+                    # Red box for unknown
+                    cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    cv2.putText(display, "Unknown", (x1, y1 - 5),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            
+            except ValueError:
+                # Face too small or invalid in crop
+                continue
         
         return display, recognitions
     
