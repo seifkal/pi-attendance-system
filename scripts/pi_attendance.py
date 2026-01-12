@@ -13,12 +13,22 @@ import time
 from pathlib import Path
 from datetime import datetime
 
+# server (database, website,API) imports
+import requests  # Allows sending data to our website
+import json      # Helps format the data
+
+# The address of the computer running the server
+# I used my cloudflare tunnel here thats why it says turks21.uk
+SERVER_URL = "https://attendance.turks21.uk/api/upload_report"
+
 sys.path.append(str(Path(__file__).parent))
 
 from face_recognition import FaceRecognizer
 from student_database import StudentDatabase
 from activity_monitor import ActivityMonitor, get_attention_color
 from session_manager import SessionManager, SessionConfig
+from detect_and_crop import crop_face, load_model as load_yolo
+from ultralytics import YOLO
 
 # Try to import picamera2 for Pi Camera Module
 try:
@@ -47,6 +57,11 @@ class AttendanceSystem:
         # Load models
         print("Loading ArcFace model (buffalo_s - optimized for Pi)...")
         self.recognizer = FaceRecognizer(model_name='buffalo_s', device='cpu')
+
+        # Load YOLO model
+        yolo_path = Path(__file__).parent.parent / 'models' / 'best.pt'
+        print(f"Loading YOLO model from {yolo_path}...")
+        self.yolo = YOLO(str(yolo_path))
         
         print("Loading database...")
         self.database = StudentDatabase(database_path)
@@ -72,6 +87,9 @@ class AttendanceSystem:
         
         # Camera
         self.camera = None
+
+        # Store the session manager so we can access it during cleanup
+        self.current_session_manager = None
         
     def initialize_camera(self, resolution=(640, 480)):
         """Initialize camera (Pi Camera or USB)"""
@@ -115,70 +133,79 @@ class AttendanceSystem:
             return self.camera.read()
     
     def process_frame(self, frame, mark_attendance=True):
-        """Process a single frame for face recognition"""
+        """Process a single frame for face recognition using YOLOv8 + ArcFace"""
         display = frame.copy()
         current_time = datetime.now()
         recognitions = []
         
-        try:
-            # Detect and recognize faces
-            embedding, det_info = self.recognizer.extract_embedding(frame, return_detection=True)
+        # 1. Detect faces using YOLOv8
+        results = self.yolo.predict(frame, conf=0.5, verbose=False)
+        
+        if len(results) == 0 or len(results[0].boxes) == 0:
+            return display, recognitions
             
-            # Find match
-            match = self.database.find_match(embedding, threshold=self.recognition_threshold)
+        # 2. Process each detected face
+        for box in results[0].boxes:
+            xyxy = box.xyxy[0].cpu().numpy()
+            x1, y1, x2, y2 = map(int, xyxy)
             
-            # Draw bounding box
-            bbox = det_info['bbox'].astype(int)
-            x1, y1, x2, y2 = bbox
+            # Crop face
+            face_crop = crop_face(frame, xyxy, padding=0.2)
             
-            # Get landmarks for attention tracking
-            landmarks = det_info.get('landmark')
-            
-            if match:
-                student_id, name, confidence = match
+            try:
+                # 3. Get embedding and landmarks from crop
+                embedding, landmarks = self.recognizer.extract_embedding_from_crop(
+                    face_crop, return_landmarks=True
+                )
                 
-                # Green box for recognized
-                cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # 4. Find match
+                match = self.database.find_match(embedding, threshold=self.recognition_threshold)
                 
-                # Label
-                label = f"{name} ({confidence:.2f})"
-                label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                cv2.rectangle(display, (x1, y1 - label_size[1] - 10),
-                            (x1 + label_size[0], y1), (0, 255, 0), -1)
-                cv2.putText(display, label, (x1, y1 - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-                
-                recognitions.append({
-                    'student_id': student_id,
-                    'name': name,
-                    'confidence': confidence,
-                    'bbox': [x1, y1, x2, y2],
-                    'landmarks': landmarks
-                })
-                
-                # Mark attendance (with cooldown)
-                if mark_attendance:
-                    if student_id in self.recent_recognitions:
-                        elapsed = (current_time - self.recent_recognitions[student_id]).total_seconds()
-                        if elapsed >= self.attendance_cooldown:
+                if match:
+                    student_id, name, confidence = match
+                    
+                    # Green box for recognized
+                    cv2.rectangle(display, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    
+                    # Label
+                    label = f"{name} ({confidence:.2f})"
+                    label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                    cv2.rectangle(display, (x1, y1 - label_size[1] - 10),
+                                (x1 + label_size[0], y1), (0, 255, 0), -1)
+                    cv2.putText(display, label, (x1, y1 - 5),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+                    
+                    recognitions.append({
+                        'student_id': student_id,
+                        'name': name,
+                        'confidence': confidence,
+                        'bbox': [x1, y1, x2, y2],
+                        'landmarks': landmarks
+                    })
+                    
+                    # Mark attendance (with cooldown)
+                    if mark_attendance:
+                        if student_id in self.recent_recognitions:
+                            elapsed = (current_time - self.recent_recognitions[student_id]).total_seconds()
+                            if elapsed >= self.attendance_cooldown:
+                                self.database.mark_attendance(student_id, confidence=confidence)
+                                self.recent_recognitions[student_id] = current_time
+                                print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
+                        else:
                             self.database.mark_attendance(student_id, confidence=confidence)
                             self.recent_recognitions[student_id] = current_time
                             print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
-                    else:
-                        self.database.mark_attendance(student_id, confidence=confidence)
-                        self.recent_recognitions[student_id] = current_time
-                        print(f"✓ ATTENDANCE: {name} (confidence: {confidence:.3f})")
-                
-                self.recognition_count += 1
-            else:
-                # Red box for unknown
-                cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                cv2.putText(display, "Unknown", (x1, y1 - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-        
-        except ValueError:
-            # No face detected
-            pass
+                    
+                    self.recognition_count += 1
+                else:
+                    # Red box for unknown
+                    cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    cv2.putText(display, "Unknown", (x1, y1 - 5),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            
+            except ValueError:
+                # Face too small or invalid in crop
+                continue
         
         return display, recognitions
     
@@ -254,6 +281,53 @@ class AttendanceSystem:
     def cleanup(self):
         """Clean up resources"""
         print("\n" + "=" * 60)
+        # --- UPLOAD TO DATABASE LOGIC ---
+        # Check if we have a valid session to upload
+        if hasattr(self, 'current_session_manager') and self.current_session_manager:
+            print("\n📊 Preparing to upload session data...")
+            
+            # 1. Stop the session to finalize stats
+            self.current_session_manager.stop_session()
+            
+            # 2. Get the raw data
+            report_data = self.current_session_manager.generate_report()
+            
+            # 3. Format it for the Server
+            upload_payload = {
+                "session_name": report_data.get('session_name', "Unknown Session"),
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "duration": report_data.get('duration_minutes', 90),
+                "students": []
+            }
+
+            # Convert complex student data into the simple list the server expects
+            for student in report_data.get('attendance_records', []):
+                # Calculate average attention
+                attn_logs = student.get('attention_logs', [])
+                avg_attn = sum(attn_logs) / len(attn_logs) if attn_logs else 0.0
+                
+                upload_payload['students'].append({
+                    "name": student['name'],
+                    "status": "Present" if student['present'] else "Absent",
+                    "first_seen": student.get('first_seen', "N/A"),
+                    "checks": student.get('check_count', 0),
+                    "attention_score": round(avg_attn * 100, 1) # Convert 0.85 to 85.0
+                })
+
+            # 4. Send to Cloudflare URL
+            try:
+                print(f"🚀 Sending report to {SERVER_URL}...")
+                response = requests.post(SERVER_URL, json=upload_payload, timeout=10)
+                
+                if response.status_code == 200:
+                    print("✅ SUCCESS: Report uploaded to Server!")
+                else:
+                    print(f"❌ FAILED: Server returned {response.status_code}")
+                    print(response.text)
+            except Exception as e:
+                print(f"❌ CONNECTION ERROR: {e}")
+        # --- UPLOAD TO DATABASE LOGIC ENDS HERE---
+        
         print("SHUTTING DOWN")
         print("=" * 60)
         
@@ -315,17 +389,17 @@ class AttendanceSystem:
         )
         
         # Create managers
-        session_manager = SessionManager(students, config)
+        self.current_session_manager = SessionManager(students, config)
         activity_monitors = {}  # {student_id: ActivityMonitor}
         
         # Start session
-        session_manager.start_session(session_name)
+        self.current_session_manager.start_session(session_name)
         
         self.start_time = time.time()
         last_process_frame = 0
         
         try:
-            while session_manager.is_active:
+            while self.current_session_manager.is_active:
                 ret, frame = self.get_frame()
                 if not ret:
                     break
@@ -342,7 +416,7 @@ class AttendanceSystem:
                         student_id = rec['student_id']
                         
                         # Record presence in session
-                        session_manager.record_student_seen(student_id)
+                        self.current_session_manager.record_student_seen(student_id)
                         
                         # Activity monitoring
                         if student_id not in activity_monitors:
@@ -351,7 +425,7 @@ class AttendanceSystem:
                         landmarks = rec.get('landmarks')
                         if landmarks is not None:
                             attention = activity_monitors[student_id].analyze(landmarks)
-                            session_manager.record_attention(student_id, attention.score)
+                            self.current_session_manager.record_attention(student_id, attention.score)
                             
                             # Update display with attention color
                             color = get_attention_color(attention.state)
@@ -366,7 +440,7 @@ class AttendanceSystem:
                     display = frame
                 
                 # Session info overlay
-                status = session_manager.get_current_status()
+                status = self.current_session_manager.get_current_status()
                 elapsed = time.time() - self.start_time
                 camera_fps = self.frame_count / elapsed if elapsed > 0 else 0
                 
@@ -393,9 +467,6 @@ class AttendanceSystem:
                     print(f"  Frames: {self.frame_count}, FPS: {camera_fps:.1f}")
         
         finally:
-            # Stop session and generate report
-            if session_manager.is_active:
-                session_manager.stop_session()
             self.cleanup()
 
 
