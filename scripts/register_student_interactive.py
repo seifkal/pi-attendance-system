@@ -39,20 +39,23 @@ def main():
     
     # Registration method
     print("\nRegistration method:")
-    print("  1. Webcam capture (recommended)")
-    print("  2. Image folder")
+    print("  1. Webcam capture (Standard - requires display)")
+    print("  2. Webcam capture (SSH/Headless - press ENTER to capture)")
+    print("  3. Image folder")
     method = get_input("Select method", default="1")
     
+    use_webcam = False
+    use_headless = False
+    
     if method == "1":
-        # Webcam registration
-        num_samples = get_input("Number of face samples to capture", default="5")
-        try:
-            num_samples = int(num_samples)
-        except:
-            num_samples = 5
-        
-        source_path = None
+        # Webcam registration (Standard)
+        num_samples = get_input("Number of samples", default="5")
         use_webcam = True
+    elif method == "2":
+        # Webcam registration (Headless)
+        num_samples = get_input("Number of samples", default="5")
+        use_webcam = True
+        use_headless = True
     else:
         # Image folder registration
         source_path = get_input("Path to image folder", required=True)
@@ -91,7 +94,7 @@ def main():
     # Import modules
     from face_recognition import FaceRecognizer
     from student_database import StudentDatabase
-    from register_student import register_from_webcam, register_from_images
+    from register_student import register_from_webcam, register_from_images, register_from_webcam_headless
     
     # Initialize
     face_recognizer = FaceRecognizer(model_name='buffalo_s', device='cpu')
@@ -113,19 +116,30 @@ def main():
     print("\n" + "=" * 50)
     
     if use_webcam:
-        print("📷 Starting webcam capture...")
-        print("   Press SPACE to capture a sample")
-        print("   Press Q to finish early")
-        print("=" * 50 + "\n")
-        
-        success = register_from_webcam(
-            student_id=student_id,
-            name=name,
-            face_recognizer=face_recognizer,
-            database=database,
-            num_samples=num_samples,
-            notes=notes if notes else None
-        )
+        if use_headless:
+            print("📷 Starting HEADLESS capture...")
+            success = register_from_webcam_headless(
+                student_id=student_id,
+                name=name,
+                face_recognizer=face_recognizer,
+                database=database,
+                num_samples=int(num_samples),
+                notes=notes if notes else None
+            )
+        else:
+            print("📷 Starting windowed capture...")
+            print("   Press SPACE to capture a sample")
+            print("   Press Q to finish early")
+            print("=" * 50 + "\n")
+            
+            success = register_from_webcam(
+                student_id=student_id,
+                name=name,
+                face_recognizer=face_recognizer,
+                database=database,
+                num_samples=int(num_samples),
+                notes=notes if notes else None
+            )
     else:
         # Load YOLO for image processing
         yolo_model = None
