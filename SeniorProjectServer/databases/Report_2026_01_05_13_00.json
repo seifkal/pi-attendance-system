@@ -1,0 +1,42 @@
+{
+    "session_name": "Linear Algebra",
+    "date": "2026-01-05 13:00",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Ahmad Al-Rashid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 38.3
+        },
+        {
+            "name": "Sara Khalid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 30.5
+        },
+        {
+            "name": "Yousef Mahmoud",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 59.1
+        },
+        {
+            "name": "Noor Hussein",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 46.6
+        },
+        {
+            "name": "Omar Zaid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 41.9
+        }
+    ]
+}

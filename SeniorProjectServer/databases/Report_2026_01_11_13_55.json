@@ -1,0 +1,28 @@
+{
+    "session_name": "Demo",
+    "date": "2026-01-11 13:55",
+    "duration": 0,
+    "students": [
+        {
+            "name": "Student STU001",
+            "status": "Present",
+            "first_seen": "13:55:48",
+            "checks": 0,
+            "attention_score": 85.1
+        },
+        {
+            "name": "Zaid AlTurk",
+            "status": "Absent",
+            "first_seen": "N/A",
+            "checks": 0,
+            "attention_score": 0.0
+        },
+        {
+            "name": "Ahmad AlHarasees",
+            "status": "Present",
+            "first_seen": "13:55:48",
+            "checks": 0,
+            "attention_score": 98.0
+        }
+    ]
+}

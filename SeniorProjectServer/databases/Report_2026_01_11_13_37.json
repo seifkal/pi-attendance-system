@@ -1,0 +1,21 @@
+{
+    "session_name": "test 3",
+    "date": "2026-01-11 13:37",
+    "duration": 0,
+    "students": [
+        {
+            "name": "Student STU001",
+            "status": "Present",
+            "first_seen": "13:37:22",
+            "checks": 0,
+            "attention_score": 91.2
+        },
+        {
+            "name": "Zaid AlTurk",
+            "status": "Present",
+            "first_seen": "13:37:22",
+            "checks": 0,
+            "attention_score": 93.5
+        }
+    ]
+}

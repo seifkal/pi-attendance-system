@@ -1,0 +1,63 @@
+{
+    "session_name": "Computer Architecture",
+    "date": "2026-01-12 09:30",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Fairuz",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "lionel messi",
+            "status": "Present",
+            "first_seen": "09:12",
+            "checks": 11,
+            "attention_score": 78.7
+        },
+        {
+            "name": "Tom Cruise",
+            "status": "Present",
+            "first_seen": "09:17",
+            "checks": 9,
+            "attention_score": 91.0
+        },
+        {
+            "name": "Albert Einstein",
+            "status": "Present",
+            "first_seen": "09:50",
+            "checks": 12,
+            "attention_score": 74.2
+        },
+        {
+            "name": "Musa Al-Taamari",
+            "status": "Present",
+            "first_seen": "09:27",
+            "checks": 8,
+            "attention_score": 100
+        },
+        {
+            "name": "Leonardo da Vinci",
+            "status": "Present",
+            "first_seen": "09:39",
+            "checks": 8,
+            "attention_score": 92.2
+        },
+        {
+            "name": "The Rock",
+            "status": "Present",
+            "first_seen": "09:36",
+            "checks": 6,
+            "attention_score": 95.3
+        },
+        {
+            "name": "Amr Diab",
+            "status": "Present",
+            "first_seen": "09:40",
+            "checks": 9,
+            "attention_score": 94.5
+        }
+    ]
+}

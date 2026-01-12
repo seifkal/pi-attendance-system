@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Portal | Attendance AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><span>⚡</span> ECMS5 Portal</div>
+        <div class="search-container">
+            <div class="search-icon"></div>
+            <input type="text" id="searchInput" class="search-box" placeholder="Search classes...">
+        </div>
+        <div class="class-list" id="classList">
+            <div style="text-align:center; padding:20px; color:gray;">Loading...</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div class="report-title">
+                <h1 id="sessionTitle">Select a Class</h1>
+                <div class="report-meta" id="sessionDate">Choose a report from the sidebar to view details.</div>
+            </div>
+        </div>
+
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-label">Students Present</div>
+                <div class="stat-value" id="statPresent">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Class Avg. Focus</div>
+                <div class="stat-value" id="statAvgFocus">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Low Attention Alerts</div>
+                <div class="stat-value" id="statAlerts" style="color:var(--danger)">-</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Status</th>
+                        <th>First Seen</th>
+                        <th>Check-ins</th>
+                        <th>Average Focus</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTable">
+                    <tr><td colspan="5" class="empty-state">Waiting for selection...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button id="deleteBtn" class="delete-btn" onclick="deleteReport()">
+            <span class="delete-icon">🗑️</span> Delete Report
+        </button>
+    </div>
+
+    <script src="/static/js/main.js?v=5"></script>
+</body>
+</html>

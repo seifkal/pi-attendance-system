@@ -1,0 +1,63 @@
+{
+    "session_name": "Linear Algebra",
+    "date": "2026-01-12 13:00",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Fairuz",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "lionel messi",
+            "status": "Present",
+            "first_seen": "09:57",
+            "checks": 7,
+            "attention_score": 36.3
+        },
+        {
+            "name": "Tom Cruise",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "Albert Einstein",
+            "status": "Present",
+            "first_seen": "09:40",
+            "checks": 5,
+            "attention_score": 32.0
+        },
+        {
+            "name": "Musa Al-Taamari",
+            "status": "Present",
+            "first_seen": "09:31",
+            "checks": 9,
+            "attention_score": 58.0
+        },
+        {
+            "name": "Leonardo da Vinci",
+            "status": "Present",
+            "first_seen": "09:32",
+            "checks": 7,
+            "attention_score": 36.7
+        },
+        {
+            "name": "The Rock",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "Amr Diab",
+            "status": "Present",
+            "first_seen": "09:55",
+            "checks": 7,
+            "attention_score": 42.4
+        }
+    ]
+}

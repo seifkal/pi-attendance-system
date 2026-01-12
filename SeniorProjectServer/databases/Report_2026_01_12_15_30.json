@@ -1,0 +1,63 @@
+{
+    "session_name": "Embedded Systems",
+    "date": "2026-01-12 15:30",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Fairuz",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "lionel messi",
+            "status": "Present",
+            "first_seen": "09:32",
+            "checks": 5,
+            "attention_score": 60.0
+        },
+        {
+            "name": "Tom Cruise",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "Albert Einstein",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "Musa Al-Taamari",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "Leonardo da Vinci",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        },
+        {
+            "name": "The Rock",
+            "status": "Present",
+            "first_seen": "09:57",
+            "checks": 12,
+            "attention_score": 77.0
+        },
+        {
+            "name": "Amr Diab",
+            "status": "Absent",
+            "first_seen": "--:--",
+            "checks": 0,
+            "attention_score": 0
+        }
+    ]
+}
