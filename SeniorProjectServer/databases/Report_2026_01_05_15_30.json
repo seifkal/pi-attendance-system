@@ -1,0 +1,42 @@
+{
+    "session_name": "Embedded Systems",
+    "date": "2026-01-05 15:30",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Ahmad Al-Rashid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 62.1
+        },
+        {
+            "name": "Sara Khalid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 74.8
+        },
+        {
+            "name": "Yousef Mahmoud",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 63.2
+        },
+        {
+            "name": "Noor Hussein",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 60.5
+        },
+        {
+            "name": "Omar Zaid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 87.1
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "session_name": "test 2",
+    "date": "2026-01-11 13:07",
+    "duration": 0,
+    "students": [
+        {
+            "name": "Student STU001",
+            "status": "Present",
+            "first_seen": "13:06:49",
+            "checks": 0,
+            "attention_score": 83.3
+        }
+    ]
+}

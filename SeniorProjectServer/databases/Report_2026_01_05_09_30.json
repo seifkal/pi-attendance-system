@@ -1,0 +1,42 @@
+{
+    "session_name": "Computer Architecture",
+    "date": "2026-01-05 09:30",
+    "duration": 90,
+    "students": [
+        {
+            "name": "Ahmad Al-Rashid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 100
+        },
+        {
+            "name": "Sara Khalid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 98.7
+        },
+        {
+            "name": "Yousef Mahmoud",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 88.1
+        },
+        {
+            "name": "Noor Hussein",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 74.7
+        },
+        {
+            "name": "Omar Zaid",
+            "status": "Present",
+            "first_seen": "09:05",
+            "checks": 6,
+            "attention_score": 89.5
+        }
+    ]
+}
