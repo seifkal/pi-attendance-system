@@ -219,6 +219,91 @@ def register_from_webcam(
     return success
 
 
+def register_from_webcam_headless(
+    student_id: str,
+    name: str,
+    face_recognizer: FaceRecognizer,
+    database: StudentDatabase,
+    num_samples: int = 5,
+    notes: str = None
+) -> bool:
+    """
+    Register a student using webcam capture in HEADLESS mode (no display).
+    Manually triggers capture when user presses Enter.
+    """
+    import time
+    
+    logger.info(f"Starting HEADLESS webcam registration for {name}...")
+    logger.info(f"Will capture {num_samples} samples.")
+    logger.info("Please sit in front of the camera.")
+    
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        logger.error("Could not open webcam")
+        return False
+    
+    # Set buffer size to 1 if possible to reduce lag, though flushing manually is safer
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    
+    embeddings = []
+    captured = 0
+    
+    try:
+        print("\n" + "="*40)
+        print("  INSTRUCTIONS  ")
+        print("  1. Look at the camera")
+        print("  2. Press ENTER to take a photo")
+        print("  3. Repeat for different angles")
+        print("="*40 + "\n")
+        
+        while captured < num_samples:
+            sys.stdout.write(f"\n[{captured + 1}/{num_samples}] Press ENTER to capture... ")
+            sys.stdout.flush()
+            input() # Wait for Enter
+            
+            print("Capturing...")
+            
+            # Flush buffer to get a fresh frame (cameras buffer old frames)
+            for _ in range(5):
+                cap.read()
+                
+            ret, frame = cap.read()
+            if not ret:
+                logger.error("Failed to read from camera")
+                break
+                
+            # Try to detect face
+            try:
+                embedding = face_recognizer.extract_embedding(frame)
+                embeddings.append(embedding)
+                captured += 1
+                print(f"✓ Capture successful! ({captured}/{num_samples})")
+                    
+            except ValueError:
+                print("✗ No face detected! Try again.")
+                print("  (Make sure you are well-lit and facing the camera)")
+            
+    finally:
+        cap.release()
+    
+    if len(embeddings) < 2:
+        logger.error(f"\n✗ Insufficient samples captured. Need at least 2, got {len(embeddings)}")
+        return False
+    
+    # Register student
+    success = database.add_student(
+        student_id=student_id,
+        name=name,
+        embeddings=embeddings,
+        notes=notes
+    )
+    
+    if success:
+        print(f"\n✓ Student registered: {name} ({student_id}) with {len(embeddings)} samples")
+    
+    return success
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Register students for face recognition",
@@ -233,6 +318,7 @@ def main():
     parser.add_argument('--source', type=str, help='Input: directory of images or image file')
     parser.add_argument('--webcam', action='store_true', help='Use webcam for registration')
     parser.add_argument('--num-samples', type=int, default=5, help='Number of webcam samples to capture')
+    parser.add_argument('--no-display', action='store_true', help='Headless mode (no video display) - auto capture')
     
     # Database
     parser.add_argument('--db', type=str, default='databases/students.db', help='Database path')
@@ -271,6 +357,7 @@ def main():
     
     # Initialize face recognizer
     logger.info("Loading ArcFace model...")
+    # Headless mode requires specific environment on Pi, assumed handled by user setup
     face_recognizer = FaceRecognizer(model_name=args.arcface_model, device='cpu')
     
     # Load YOLO model if needed
@@ -297,14 +384,24 @@ def main():
     
     # Register student
     if args.webcam:
-        success = register_from_webcam(
-            student_id=args.id,
-            name=args.name,
-            face_recognizer=face_recognizer,
-            database=database,
-            num_samples=args.num_samples,
-            notes=args.notes
-        )
+        if args.no_display:
+            success = register_from_webcam_headless(
+                student_id=args.id,
+                name=args.name,
+                face_recognizer=face_recognizer,
+                database=database,
+                num_samples=args.num_samples,
+                notes=args.notes
+            )
+        else:
+            success = register_from_webcam(
+                student_id=args.id,
+                name=args.name,
+                face_recognizer=face_recognizer,
+                database=database,
+                num_samples=args.num_samples,
+                notes=args.notes
+            )
     else:
         # Collect image paths
         source_path = Path(args.source)
